@@ -167,8 +167,13 @@ func main() {
 	// stat
 	fmt.Printf("%d practice entries, %d words\n", len(data.Entries), len(data.Words))
 
+	cmd := "practice"
+	if len(os.Args) > 1 {
+		cmd = os.Args[1]
+	}
+
 	// commands
-	switch os.Args[1] {
+	switch cmd {
 	case "migrate":
 		data.Migrate()
 	case "complete":
