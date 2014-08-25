@@ -150,6 +150,8 @@ var LevelTime = []time.Duration{
 }
 
 func init() {
+	rand.Seed(time.Now().UnixNano())
+
 	gob.Register(new(AudioToWordEntry))
 	gob.Register(new(WordToAudioEntry))
 	gob.Register(new(SentenceEntry))
