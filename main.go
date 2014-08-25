@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	m "./memory"
 	"github.com/reusee/gobfile"
 )
 
@@ -43,7 +42,8 @@ type HistoryEntry struct {
 type IsEntry interface {
 	IsTheSame(IsEntry) bool
 	Load(*Data)
-	GetLesson() string
+	Lesson() string
+	PracticeOrder() int
 }
 
 type AudioToWordEntry struct {
@@ -62,8 +62,12 @@ func (e *AudioToWordEntry) Load(data *Data) {
 	e.word = data.Words[e.WordIndex]
 }
 
-func (e *AudioToWordEntry) GetLesson() string {
+func (e *AudioToWordEntry) Lesson() string {
 	return lessonPattern.FindStringSubmatch(e.word.AudioFile)[0]
+}
+
+func (e *AudioToWordEntry) PracticeOrder() int {
+	return 1
 }
 
 type WordToAudioEntry struct {
@@ -82,8 +86,12 @@ func (e *WordToAudioEntry) Load(data *Data) {
 	e.word = data.Words[e.WordIndex]
 }
 
-func (e *WordToAudioEntry) GetLesson() string {
+func (e *WordToAudioEntry) Lesson() string {
 	return lessonPattern.FindStringSubmatch(e.word.AudioFile)[0]
+}
+
+func (e *WordToAudioEntry) PracticeOrder() int {
+	return 3
 }
 
 type SentenceEntry struct {
@@ -99,8 +107,12 @@ func (e *SentenceEntry) IsTheSame(entry IsEntry) bool {
 
 func (e *SentenceEntry) Load(*Data) {}
 
-func (e *SentenceEntry) GetLesson() string {
+func (e *SentenceEntry) Lesson() string {
 	return lessonPattern.FindStringSubmatch(e.AudioFile)[0]
+}
+
+func (e *SentenceEntry) PracticeOrder() int {
+	return 2
 }
 
 type Word struct {
@@ -174,8 +186,6 @@ func main() {
 
 	// commands
 	switch cmd {
-	case "migrate":
-		data.Migrate()
 	case "complete":
 		data.Complete()
 	case "history":
@@ -210,49 +220,6 @@ func (d *Data) Complete() {
 			fmt.Scanf("%s", &text)
 			word.Text = text
 			d.save()
-		}
-	}
-}
-
-func (data *Data) Migrate() {
-	mem := &m.Memory{
-		Concepts: make(map[string]*m.Concept),
-		Connects: make(map[string]*m.Connect),
-	}
-	mem.Load()
-	for _, connect := range mem.Connects {
-		from := mem.Concepts[connect.From]
-		to := mem.Concepts[connect.To]
-		history := connect.Histories
-		var entry *Entry
-		if from.What == m.WORD && to.What == m.AUDIO {
-			entry = &Entry{
-				IsEntry: &WordToAudioEntry{
-					WordIndex: data.GetWordIndex(to.File, from.Text),
-				},
-			}
-		} else if from.What == m.AUDIO && to.What == m.WORD {
-			entry = &Entry{
-				IsEntry: &AudioToWordEntry{
-					WordIndex: data.GetWordIndex(from.File, to.Text),
-				},
-			}
-		} else if from.What == m.AUDIO && to.What == m.SENTENCE {
-			entry = &Entry{
-				IsEntry: &SentenceEntry{
-					AudioFile: from.File,
-				},
-			}
-		} else {
-			panic("not here")
-		}
-		if data.AddEntry(entry) {
-			for _, e := range history {
-				entry.History = append(entry.History, HistoryEntry{
-					Level: e.Level,
-					Time:  e.Time,
-				})
-			}
 		}
 	}
 }
@@ -311,8 +278,8 @@ func (self EntrySorter) Less(i, j int) bool {
 	left, right := self.l[i], self.l[j]
 	leftLastHistory := left.History[len(left.History)-1]
 	rightLastHistory := right.History[len(right.History)-1]
-	leftLesson := left.GetLesson()
-	rightLesson := right.GetLesson()
+	leftLesson := left.Lesson()
+	rightLesson := right.Lesson()
 	leftLevelOrder := self.getLevelOrder(left)
 	rightLevelOrder := self.getLevelOrder(right)
 	if leftLevelOrder < rightLevelOrder {
@@ -342,8 +309,8 @@ func (self EntrySorter) Less(i, j int) bool {
 		} else if leftLesson > rightLesson {
 			return false
 		} else { // same lesson
-			leftTypeOrder := self.getTypeOrder(left)
-			rightTypeOrder := self.getTypeOrder(right)
+			leftTypeOrder := left.PracticeOrder()
+			rightTypeOrder := right.PracticeOrder()
 			if leftTypeOrder < rightTypeOrder {
 				return true
 			} else if leftTypeOrder > rightTypeOrder {
@@ -368,18 +335,4 @@ func (s EntrySorter) getLevelOrder(e *Entry) int {
 		return 1
 	}
 	return 2 // 0
-}
-
-func (s EntrySorter) getTypeOrder(e *Entry) (ret int) {
-	switch e.IsEntry.(type) {
-	case *AudioToWordEntry:
-		ret = 1
-	case *SentenceEntry:
-		ret = 2
-	case *WordToAudioEntry:
-		ret = 3
-	default:
-		panic("fixme")
-	}
-	return
 }
