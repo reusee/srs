@@ -9,8 +9,11 @@ import (
 	"github.com/reusee/lgtk"
 )
 
+type UI func(what string, args ...interface{})
+
+type Input func() rune
+
 func ui_gtk(entries []*Entry, data *Data) {
-	// ui
 	keys := make(chan rune)
 	g, err := lgtk.New(`
 Gdk = lgi.Gdk
@@ -79,24 +82,28 @@ win:show_all()
 		log.Fatal(err)
 	}
 
-	setHint := func(s string) {
-		g.ExecEval(`win.child.hint:set_label(T)`, "T", s)
-	}
-	setText := func(s string) {
-		g.ExecEval(`win.child.text:set_label(T)`, "T", s)
-	}
-	setLevel := func(s string) {
-		g.ExecEval(`win.child.level:set_label(T)`, "T", s)
+	var ui UI = func(what string, args ...interface{}) {
+		switch what {
+		case "set-hint":
+			g.ExecEval(`win.child.hint:set_label(T)`, "T", args[0].(string))
+		case "set-text":
+			g.ExecEval(`win.child.text:set_label(T)`, "T", args[0].(string))
+		default:
+			log.Fatalf("unknown ui action %s", what)
+		}
 	}
 
-	setHint("press f to start")
+	var input Input = func() rune {
+		return <-keys
+	}
+
+	ui("set-hint", "press f to start")
 	for {
-		key := <-keys
-		if key == 'f' {
+		if input() == 'f' {
 			break
 		}
 	}
-	setHint("")
+	ui("set-hint", "")
 
 	wg := new(sync.WaitGroup)
 	save := func() {
@@ -110,102 +117,103 @@ win:show_all()
 	// train
 loop:
 	for _, e := range entries {
-		setHint("")
-		setText("")
-
+		ui("set-hint", "")
+		ui("set-text", "")
 		lastHistory := e.History[len(e.History)-1]
-		setLevel(strconv.Itoa(lastHistory.Level))
-
-		switch entry := e.IsEntry.(type) {
-		case *AudioToWordEntry:
-			setHint("playing...")
-			playAudio(entry.word.AudioFile)
-			setHint("press any key to show answer")
-			<-keys
-			setText(entry.word.Text)
-		repeat:
-			setHint("press G to levelup, T to reset level, Space to repeat")
-		read_key:
-			key := <-keys
-			switch key {
-			case 'g':
-				e.History = append(e.History, HistoryEntry{Level: lastHistory.Level + 1, Time: time.Now()})
-				save()
-			case 't':
-				e.History = append(e.History, HistoryEntry{Level: 0, Time: time.Now()})
-				save()
-			case ' ':
-				setHint("playing...")
-				playAudio(entry.word.AudioFile)
-				setHint("")
-				goto repeat
-			case 'q':
-				setText("")
-				setHint("exit...")
-				break loop
-			default:
-				goto read_key
-			}
-
-		case *WordToAudioEntry:
-			setText(entry.word.Text)
-			setHint("press any key to play audio")
-			<-keys
-		repeat2:
-			setHint("playing...")
-			playAudio(entry.word.AudioFile)
-			setHint("press G to levelup, T to reset level, Space to repeat")
-		read_key2:
-			key := <-keys
-			switch key {
-			case 'g':
-				e.History = append(e.History, HistoryEntry{Level: lastHistory.Level + 1, Time: time.Now()})
-				save()
-			case 't':
-				e.History = append(e.History, HistoryEntry{Level: 0, Time: time.Now()})
-				save()
-			case ' ':
-				goto repeat2
-			case 'q':
-				setText("")
-				setHint("exit...")
-				break loop
-			default:
-				goto read_key2
-			}
-
-		case *SentenceEntry:
-			setHint("playing...")
-			playAudio(entry.AudioFile)
-		repeat3:
-			setHint("press G to levelup, T to reset level, Space to repeat")
-		read_key3:
-			key := <-keys
-			switch key {
-			case 'g':
-				e.History = append(e.History, HistoryEntry{Level: lastHistory.Level + 1, Time: time.Now()})
-				save()
-			case 't':
-				e.History = append(e.History, HistoryEntry{Level: 0, Time: time.Now()})
-				save()
-			case ' ':
-				setHint("playing...")
-				playAudio(entry.AudioFile)
-				setHint("")
-				goto repeat3
-			case 'q':
-				setText("")
-				setHint("exit...")
-				break loop
-			default:
-				goto read_key3
-			}
-
-		default:
-			panic("fixme")
+		g.ExecEval(`win.child.level:set_label(T)`, "T", strconv.Itoa(lastHistory.Level))
+		res := e.Practice(ui, input)
+		switch res {
+		case LEVEL_UP:
+			e.History = append(e.History, HistoryEntry{Level: lastHistory.Level + 1, Time: time.Now()})
+			save()
+		case LEVEL_RESET:
+			e.History = append(e.History, HistoryEntry{Level: 0, Time: time.Now()})
+			save()
+		case EXIT:
+			break loop
 		}
-
 	}
 
 	wg.Wait()
+}
+
+func (e *AudioToWordEntry) Practice(ui UI, input Input) PracticeResult {
+	ui("set-hint", "playing...")
+	playAudio(e.word.AudioFile)
+	ui("set-hint", "press any key to show answer")
+	input()
+	ui("set-text", e.word.Text)
+repeat:
+	ui("set-hint", "press G to levelup, T to reset level, Space to repeat")
+read_key:
+	key := input()
+	switch key {
+	case 'g':
+		return LEVEL_UP
+	case 't':
+		return LEVEL_RESET
+	case ' ':
+		ui("set-hint", "playing...")
+		playAudio(e.word.AudioFile)
+		ui("set-hint", "")
+		goto repeat
+	case 'q':
+		ui("set-hint", "exit...")
+		return EXIT
+	default:
+		goto read_key
+	}
+	return NONE
+}
+
+func (e *WordToAudioEntry) Practice(ui UI, input Input) PracticeResult {
+	ui("set-text", e.word.Text)
+	ui("set-hint", "press any key to play audio")
+	input()
+repeat:
+	ui("set-hint", "playing...")
+	playAudio(e.word.AudioFile)
+	ui("set-hint", "press G to levelup, T to reset level, Space to repeat")
+read_key:
+	key := input()
+	switch key {
+	case 'g':
+		return LEVEL_UP
+	case 't':
+		return LEVEL_RESET
+	case ' ':
+		goto repeat
+	case 'q':
+		ui("set-hint", "exit...")
+		return EXIT
+	default:
+		goto read_key
+	}
+	return NONE
+}
+
+func (e *SentenceEntry) Practice(ui UI, input Input) PracticeResult {
+	ui("set-hint", "playing...")
+	playAudio(e.AudioFile)
+repeat:
+	ui("set-hint", "press G to levelup, T to reset level, Space to repeat")
+read_key:
+	key := input()
+	switch key {
+	case 'g':
+		return LEVEL_UP
+	case 't':
+		return LEVEL_RESET
+	case ' ':
+		ui("set-hint", "playing...")
+		playAudio(e.AudioFile)
+		ui("set-hint", "")
+		goto repeat
+	case 'q':
+		ui("set-hint", "exit...")
+		return EXIT
+	default:
+		goto read_key
+	}
+	return NONE
 }

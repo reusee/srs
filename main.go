@@ -44,7 +44,17 @@ type IsEntry interface {
 	Load(*Data)
 	Lesson() string
 	PracticeOrder() int
+	Practice(UI, Input) PracticeResult
 }
+
+type PracticeResult int
+
+const (
+	LEVEL_UP PracticeResult = iota
+	LEVEL_RESET
+	EXIT
+	NONE
+)
 
 type AudioToWordEntry struct {
 	WordIndex int
