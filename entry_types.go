@@ -1,4 +1,12 @@
-package srs
+package main
+
+import "encoding/gob"
+
+func init() {
+	gob.Register(new(AudioToWordEntry))
+	gob.Register(new(WordToAudioEntry))
+	gob.Register(new(SentenceEntry))
+}
 
 // audio to word
 

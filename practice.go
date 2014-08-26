@@ -2,12 +2,30 @@ package main
 
 import (
 	"log"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/reusee/lgtk"
 )
+
+func (data *Data) Practice() {
+	var entries []*Entry
+	now := time.Now()
+	for _, e := range data.Entries {
+		lastHistory := e.History[len(e.History)-1]
+		if lastHistory.Time.Add(LevelTime[lastHistory.Level]).Before(now) {
+			entries = append(entries, e)
+		}
+	}
+	sort.Sort(EntrySorter{entries, data})
+	max := 25
+	if len(entries) > max {
+		entries = entries[:max]
+	}
+	ui_gtk(entries, data)
+}
 
 type UI func(what string, args ...interface{})
 

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"encoding/gob"
 	"fmt"
+	"log"
 	"math"
 	"math/rand"
 	"os"
@@ -83,10 +83,6 @@ var LevelTime = []time.Duration{
 func init() {
 	rand.Seed(time.Now().UnixNano())
 
-	gob.Register(new(AudioToWordEntry))
-	gob.Register(new(WordToAudioEntry))
-	gob.Register(new(SentenceEntry))
-
 	_, rootPath, _, _ = runtime.Caller(0)
 	rootPath, _ = filepath.Abs(rootPath)
 	rootPath = filepath.Dir(rootPath)
@@ -97,6 +93,8 @@ func init() {
 		LevelTime = append(LevelTime, t)
 	}
 }
+
+var commandHandlers = map[string]func(*Data){}
 
 func main() {
 	var data Data
@@ -138,6 +136,12 @@ func main() {
 	case "words":
 		for i, w := range data.Words {
 			p("%-6d %-20s %s\n", i, w.AudioFile, w.Text)
+		}
+	default:
+		if handler, ok := commandHandlers[cmd]; ok {
+			handler(&data)
+		} else {
+			log.Fatalf("unknown command %s", cmd)
 		}
 	}
 
@@ -193,23 +197,6 @@ func (data *Data) PrintHistory() {
 	}
 	per := time.Second * 5
 	p("total %d, %v / %v\n", total, per, time.Duration(total)*per)
-}
-
-func (data *Data) Practice() {
-	var entries []*Entry
-	now := time.Now()
-	for _, e := range data.Entries {
-		lastHistory := e.History[len(e.History)-1]
-		if lastHistory.Time.Add(LevelTime[lastHistory.Level]).Before(now) {
-			entries = append(entries, e)
-		}
-	}
-	sort.Sort(EntrySorter{entries, data})
-	max := 25
-	if len(entries) > max {
-		entries = entries[:max]
-	}
-	ui_gtk(entries, data)
 }
 
 type EntrySorter struct {
