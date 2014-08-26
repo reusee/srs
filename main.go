@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"sort"
 	"strings"
@@ -19,8 +18,6 @@ import (
 
 var (
 	p = fmt.Printf
-
-	lessonPattern = regexp.MustCompile("[0-9]+")
 )
 
 type Data struct {
@@ -199,17 +196,14 @@ func (data *Data) PrintHistory() {
 	p("total %d, %v / %v\n", total, per, time.Duration(total)*per)
 }
 
-type EntrySorter struct {
-	l []*Entry
-	d *Data
-}
+type EntrySorter []*Entry
 
-func (s EntrySorter) Len() int { return len(s.l) }
+func (s EntrySorter) Len() int { return len(s) }
 
-func (s EntrySorter) Swap(i, j int) { s.l[i], s.l[j] = s.l[j], s.l[i] }
+func (s EntrySorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 func (self EntrySorter) Less(i, j int) bool {
-	left, right := self.l[i], self.l[j]
+	left, right := self[i], self[j]
 	leftLastHistory := left.History[len(left.History)-1]
 	rightLastHistory := right.History[len(right.History)-1]
 	leftLesson := left.Lesson()

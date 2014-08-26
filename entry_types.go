@@ -1,6 +1,9 @@
 package main
 
-import "encoding/gob"
+import (
+	"encoding/gob"
+	"regexp"
+)
 
 func init() {
 	gob.Register(new(AudioToWordEntry))
@@ -8,6 +11,10 @@ func init() {
 	gob.Register(new(SentenceEntry))
 	gob.Register(new(DialogEntry))
 }
+
+var (
+	lessonPattern = regexp.MustCompile("[0-9]+")
+)
 
 // audio to word
 

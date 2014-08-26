@@ -19,7 +19,7 @@ func (data *Data) Practice() {
 			entries = append(entries, e)
 		}
 	}
-	sort.Sort(EntrySorter{entries, data})
+	sort.Sort(EntrySorter(entries))
 	max := 25
 	if len(entries) > max {
 		entries = entries[:max]
