@@ -204,6 +204,10 @@ func main() {
 		data.PrintHistory()
 	case "practice":
 		data.Practice()
+	case "words":
+		for i, w := range data.Words {
+			p("%-6d %-20s %s\n", i, w.AudioFile, w.Text)
+		}
 	}
 
 }
