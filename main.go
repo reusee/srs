@@ -41,7 +41,7 @@ type HistoryEntry struct {
 
 type IsEntry interface {
 	IsTheSame(IsEntry) bool
-	Load(*Data)
+	Init(*Data)
 	Lesson() string
 	PracticeOrder() int
 	Practice(UI, Input) PracticeResult
@@ -114,7 +114,7 @@ func main() {
 		}
 	}
 	for _, e := range data.Entries {
-		e.Load(&data)
+		e.Init(&data)
 	}
 
 	// stat

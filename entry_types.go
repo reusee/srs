@@ -23,7 +23,7 @@ func (e *AudioToWordEntry) IsTheSame(entry IsEntry) bool {
 	return false
 }
 
-func (e *AudioToWordEntry) Load(data *Data) {
+func (e *AudioToWordEntry) Init(data *Data) {
 	e.word = data.Words[e.WordIndex]
 }
 
@@ -78,7 +78,7 @@ func (e *WordToAudioEntry) IsTheSame(entry IsEntry) bool {
 	return false
 }
 
-func (e *WordToAudioEntry) Load(data *Data) {
+func (e *WordToAudioEntry) Init(data *Data) {
 	e.word = data.Words[e.WordIndex]
 }
 
@@ -116,10 +116,47 @@ read_key:
 	return NONE
 }
 
+// sentence common
+
+type sentenceCommon struct {
+	AudioFile string
+}
+
+func (s *sentenceCommon) Lesson() string {
+	return lessonPattern.FindStringSubmatch(s.AudioFile)[0]
+}
+
+func (s *sentenceCommon) Practice(ui UI, input Input) PracticeResult {
+	ui("set-hint", "playing...")
+	playAudio(s.AudioFile)
+repeat:
+	ui("set-hint", "press G to levelup, T to reset level, Space to repeat")
+read_key:
+	key := input()
+	switch key {
+	case 'g':
+		return LEVEL_UP
+	case 't':
+		return LEVEL_RESET
+	case ' ':
+		ui("set-hint", "playing...")
+		playAudio(s.AudioFile)
+		ui("set-hint", "")
+		goto repeat
+	case 'q':
+		ui("set-hint", "exit...")
+		return EXIT
+	default:
+		goto read_key
+	}
+	return NONE
+}
+
 // sentence
 
 type SentenceEntry struct {
 	AudioFile string
+	*sentenceCommon
 }
 
 func (e *SentenceEntry) IsTheSame(entry IsEntry) bool {
@@ -129,46 +166,21 @@ func (e *SentenceEntry) IsTheSame(entry IsEntry) bool {
 	return false
 }
 
-func (e *SentenceEntry) Load(*Data) {}
-
-func (e *SentenceEntry) Lesson() string {
-	return lessonPattern.FindStringSubmatch(e.AudioFile)[0]
+func (e *SentenceEntry) Init(*Data) {
+	e.sentenceCommon = &sentenceCommon{
+		AudioFile: e.AudioFile,
+	}
 }
 
 func (e *SentenceEntry) PracticeOrder() int {
 	return 2
 }
 
-func (e *SentenceEntry) Practice(ui UI, input Input) PracticeResult {
-	ui("set-hint", "playing...")
-	playAudio(e.AudioFile)
-repeat:
-	ui("set-hint", "press G to levelup, T to reset level, Space to repeat")
-read_key:
-	key := input()
-	switch key {
-	case 'g':
-		return LEVEL_UP
-	case 't':
-		return LEVEL_RESET
-	case ' ':
-		ui("set-hint", "playing...")
-		playAudio(e.AudioFile)
-		ui("set-hint", "")
-		goto repeat
-	case 'q':
-		ui("set-hint", "exit...")
-		return EXIT
-	default:
-		goto read_key
-	}
-	return NONE
-}
-
 // dialog
 
 type DialogEntry struct {
 	AudioFile string
+	*sentenceCommon
 }
 
 func (e *DialogEntry) IsTheSame(entry IsEntry) bool {
@@ -178,38 +190,12 @@ func (e *DialogEntry) IsTheSame(entry IsEntry) bool {
 	return false
 }
 
-func (e *DialogEntry) Load(*Data) {}
-
-func (e *DialogEntry) Lesson() string {
-	return lessonPattern.FindStringSubmatch(e.AudioFile)[0]
+func (e *DialogEntry) Init(*Data) {
+	e.sentenceCommon = &sentenceCommon{
+		AudioFile: e.AudioFile,
+	}
 }
 
 func (e *DialogEntry) PracticeOrder() int {
 	return 4
-}
-
-func (e *DialogEntry) Practice(ui UI, input Input) PracticeResult {
-	ui("set-hint", "playing...")
-	playAudio(e.AudioFile)
-repeat:
-	ui("set-hint", "press G to levelup, T to reset level, Space to repeat")
-read_key:
-	key := input()
-	switch key {
-	case 'g':
-		return LEVEL_UP
-	case 't':
-		return LEVEL_RESET
-	case ' ':
-		ui("set-hint", "playing...")
-		playAudio(e.AudioFile)
-		ui("set-hint", "")
-		goto repeat
-	case 'q':
-		ui("set-hint", "exit...")
-		return EXIT
-	default:
-		goto read_key
-	}
-	return NONE
 }
