@@ -10,6 +10,7 @@ import (
 func init() {
 	commandHandlers["add-words"] = AddWords
 	commandHandlers["add-sentences"] = AddSentences
+	commandHandlers["add-dialogs"] = AddDialogs
 }
 
 func AddWords(data *Data) {
@@ -82,6 +83,34 @@ func AddSentences(data *Data) {
 		added := data.AddEntry(entry)
 		if added {
 			p("added SentenceEntry %s\n", audioFile)
+		} else {
+			p("skip %s\n", audioFile)
+		}
+	}
+}
+
+func AddDialogs(data *Data) {
+	for _, audioFile := range os.Args[2:] {
+		audioFile, err := filepath.Abs(audioFile)
+		if err != nil {
+			panic(err)
+		}
+		audioFile = strings.TrimPrefix(audioFile, filepath.Join(rootPath, "files"))
+		// add sentence
+		entry := &Entry{
+			IsEntry: &DialogEntry{
+				AudioFile: audioFile,
+			},
+			History: []HistoryEntry{
+				{
+					Level: 0,
+					Time:  time.Now(),
+				},
+			},
+		}
+		added := data.AddEntry(entry)
+		if added {
+			p("added DialogEntry %s\n", audioFile)
 		} else {
 			p("skip %s\n", audioFile)
 		}

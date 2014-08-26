@@ -6,6 +6,7 @@ func init() {
 	gob.Register(new(AudioToWordEntry))
 	gob.Register(new(WordToAudioEntry))
 	gob.Register(new(SentenceEntry))
+	gob.Register(new(DialogEntry))
 }
 
 // audio to word
@@ -139,6 +140,55 @@ func (e *SentenceEntry) PracticeOrder() int {
 }
 
 func (e *SentenceEntry) Practice(ui UI, input Input) PracticeResult {
+	ui("set-hint", "playing...")
+	playAudio(e.AudioFile)
+repeat:
+	ui("set-hint", "press G to levelup, T to reset level, Space to repeat")
+read_key:
+	key := input()
+	switch key {
+	case 'g':
+		return LEVEL_UP
+	case 't':
+		return LEVEL_RESET
+	case ' ':
+		ui("set-hint", "playing...")
+		playAudio(e.AudioFile)
+		ui("set-hint", "")
+		goto repeat
+	case 'q':
+		ui("set-hint", "exit...")
+		return EXIT
+	default:
+		goto read_key
+	}
+	return NONE
+}
+
+// dialog
+
+type DialogEntry struct {
+	AudioFile string
+}
+
+func (e *DialogEntry) IsTheSame(entry IsEntry) bool {
+	if t, ok := entry.(*DialogEntry); ok && t.AudioFile == e.AudioFile {
+		return true
+	}
+	return false
+}
+
+func (e *DialogEntry) Load(*Data) {}
+
+func (e *DialogEntry) Lesson() string {
+	return lessonPattern.FindStringSubmatch(e.AudioFile)[0]
+}
+
+func (e *DialogEntry) PracticeOrder() int {
+	return 4
+}
+
+func (e *DialogEntry) Practice(ui UI, input Input) PracticeResult {
 	ui("set-hint", "playing...")
 	playAudio(e.AudioFile)
 repeat:
