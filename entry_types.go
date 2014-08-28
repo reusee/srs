@@ -119,21 +119,19 @@ read_key:
 
 // sentence common
 
-type sentenceCommon struct {
-	AudioFile string
+type sentenceCommon string
+
+func (sen sentenceCommon) Signature() string {
+	return s("sen-%s", sen)
 }
 
-func (sen *sentenceCommon) Signature() string {
-	return s("sen-%s", sen.AudioFile)
+func (s sentenceCommon) Lesson() string {
+	return lessonPattern.FindStringSubmatch(string(s))[0]
 }
 
-func (s *sentenceCommon) Lesson() string {
-	return lessonPattern.FindStringSubmatch(s.AudioFile)[0]
-}
-
-func (s *sentenceCommon) Practice(ui UI, input Input) PracticeResult {
+func (s sentenceCommon) Practice(ui UI, input Input) PracticeResult {
 	ui("set-hint", "playing...")
-	playAudio(s.AudioFile)
+	playAudio(string(s))
 repeat:
 	ui("set-hint", "press G to levelup, T to reset level, Space to repeat")
 read_key:
@@ -145,7 +143,7 @@ read_key:
 		return LEVEL_RESET
 	case ' ':
 		ui("set-hint", "playing...")
-		playAudio(s.AudioFile)
+		playAudio(string(s))
 		ui("set-hint", "")
 		goto repeat
 	case 'q':
@@ -161,13 +159,11 @@ read_key:
 
 type SentenceEntry struct {
 	AudioFile string
-	*sentenceCommon
+	sentenceCommon
 }
 
 func (e *SentenceEntry) Init(*Data) {
-	e.sentenceCommon = &sentenceCommon{
-		AudioFile: e.AudioFile,
-	}
+	e.sentenceCommon = sentenceCommon(e.AudioFile)
 }
 
 func (e *SentenceEntry) PracticeOrder() int {
@@ -178,13 +174,11 @@ func (e *SentenceEntry) PracticeOrder() int {
 
 type DialogEntry struct {
 	AudioFile string
-	*sentenceCommon
+	sentenceCommon
 }
 
 func (e *DialogEntry) Init(*Data) {
-	e.sentenceCommon = &sentenceCommon{
-		AudioFile: e.AudioFile,
-	}
+	e.sentenceCommon = sentenceCommon(e.AudioFile)
 }
 
 func (e *DialogEntry) PracticeOrder() int {

@@ -70,7 +70,8 @@ func AddSentences(data *Data, args []string) {
 		// add sentence
 		entry := &Entry{
 			IsEntry: &SentenceEntry{
-				AudioFile: audioFile,
+				AudioFile:      audioFile,
+				sentenceCommon: sentenceCommon(audioFile),
 			},
 			History: []HistoryEntry{
 				{
@@ -98,7 +99,8 @@ func AddDialogs(data *Data, args []string) {
 		// add sentence
 		entry := &Entry{
 			IsEntry: &DialogEntry{
-				AudioFile: audioFile,
+				AudioFile:      audioFile,
+				sentenceCommon: sentenceCommon(audioFile),
 			},
 			History: []HistoryEntry{
 				{
