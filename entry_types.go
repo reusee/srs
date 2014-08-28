@@ -23,11 +23,8 @@ type AudioToWordEntry struct {
 	word      *Word
 }
 
-func (e *AudioToWordEntry) IsTheSame(entry IsEntry) bool {
-	if t, ok := entry.(*AudioToWordEntry); ok && t.WordIndex == e.WordIndex {
-		return true
-	}
-	return false
+func (e *AudioToWordEntry) Signature() string {
+	return s("atw-%d", e.WordIndex)
 }
 
 func (e *AudioToWordEntry) Init(data *Data) {
@@ -78,11 +75,8 @@ type WordToAudioEntry struct {
 	word      *Word
 }
 
-func (e *WordToAudioEntry) IsTheSame(entry IsEntry) bool {
-	if t, ok := entry.(*WordToAudioEntry); ok && t.WordIndex == e.WordIndex {
-		return true
-	}
-	return false
+func (e *WordToAudioEntry) Signature() string {
+	return s("wta-%d", e.WordIndex)
 }
 
 func (e *WordToAudioEntry) Init(data *Data) {
@@ -129,6 +123,10 @@ type sentenceCommon struct {
 	AudioFile string
 }
 
+func (sen *sentenceCommon) Signature() string {
+	return s("sen-%s", sen.AudioFile)
+}
+
 func (s *sentenceCommon) Lesson() string {
 	return lessonPattern.FindStringSubmatch(s.AudioFile)[0]
 }
@@ -166,13 +164,6 @@ type SentenceEntry struct {
 	*sentenceCommon
 }
 
-func (e *SentenceEntry) IsTheSame(entry IsEntry) bool {
-	if t, ok := entry.(*SentenceEntry); ok && t.AudioFile == e.AudioFile {
-		return true
-	}
-	return false
-}
-
 func (e *SentenceEntry) Init(*Data) {
 	e.sentenceCommon = &sentenceCommon{
 		AudioFile: e.AudioFile,
@@ -188,13 +179,6 @@ func (e *SentenceEntry) PracticeOrder() int {
 type DialogEntry struct {
 	AudioFile string
 	*sentenceCommon
-}
-
-func (e *DialogEntry) IsTheSame(entry IsEntry) bool {
-	if t, ok := entry.(*DialogEntry); ok && t.AudioFile == e.AudioFile {
-		return true
-	}
-	return false
 }
 
 func (e *DialogEntry) Init(*Data) {

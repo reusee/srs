@@ -19,12 +19,14 @@ import (
 
 var (
 	p = fmt.Printf
+	s = fmt.Sprintf
 )
 
 type Data struct {
-	Entries []*Entry
-	Words   []*Word
-	save    func()
+	Entries      []*Entry
+	SignatureSet map[string]struct{}
+	Words        []*Word
+	save         func()
 }
 
 type Entry struct {
@@ -38,7 +40,7 @@ type HistoryEntry struct {
 }
 
 type IsEntry interface {
-	IsTheSame(IsEntry) bool
+	Signature() string
 	Init(*Data)
 	Lesson() string
 	PracticeOrder() int
@@ -95,7 +97,9 @@ func init() {
 var commandHandlers = map[string]func(*Data, []string){}
 
 func main() {
-	var data Data
+	data := Data{
+		SignatureSet: make(map[string]struct{}),
+	}
 
 	db, err := gobfile.New(&data, filepath.Join(rootPath, "db.gob"), 47213)
 	if err != nil {
@@ -139,6 +143,10 @@ func main() {
 		data.ListWords(args)
 	case "edit-word":
 		data.EditWord(args)
+	case "fix":
+		for _, e := range data.Entries {
+			data.SignatureSet[e.Signature()] = struct{}{}
+		}
 	default:
 		if handler, ok := commandHandlers[cmd]; ok {
 			handler(&data, args)
@@ -154,12 +162,12 @@ func playAudio(f string) {
 }
 
 func (d *Data) AddEntry(entry *Entry) (added bool) {
-	for _, e := range d.Entries {
-		if entry.IsEntry.IsTheSame(e.IsEntry) {
-			return
-		}
+	sig := entry.Signature()
+	if _, has := d.SignatureSet[sig]; has {
+		return
 	}
 	d.Entries = append(d.Entries, entry)
+	d.SignatureSet[sig] = struct{}{}
 	added = true
 	return
 }
