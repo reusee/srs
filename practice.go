@@ -10,7 +10,7 @@ import (
 	"github.com/reusee/lgtk"
 )
 
-func (data *Data) Practice() {
+func (data *Data) Practice([]string) {
 	var entries []*Entry
 	now := time.Now()
 	for _, e := range data.Entries {

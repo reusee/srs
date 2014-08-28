@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -13,8 +12,8 @@ func init() {
 	commandHandlers["add-dialogs"] = AddDialogs
 }
 
-func AddWords(data *Data) {
-	for _, audioFile := range os.Args[2:] {
+func AddWords(data *Data, args []string) {
+	for _, audioFile := range args {
 		audioFile, err := filepath.Abs(audioFile)
 		if err != nil {
 			panic(err)
@@ -58,11 +57,11 @@ func AddWords(data *Data) {
 			p("skip %s\n", audioFile)
 		}
 	}
-	data.Complete()
+	data.Complete(nil)
 }
 
-func AddSentences(data *Data) {
-	for _, audioFile := range os.Args[2:] {
+func AddSentences(data *Data, args []string) {
+	for _, audioFile := range args {
 		audioFile, err := filepath.Abs(audioFile)
 		if err != nil {
 			panic(err)
@@ -89,8 +88,8 @@ func AddSentences(data *Data) {
 	}
 }
 
-func AddDialogs(data *Data) {
-	for _, audioFile := range os.Args[2:] {
+func AddDialogs(data *Data, args []string) {
+	for _, audioFile := range args {
 		audioFile, err := filepath.Abs(audioFile)
 		if err != nil {
 			panic(err)

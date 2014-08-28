@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -91,7 +92,7 @@ func init() {
 	}
 }
 
-var commandHandlers = map[string]func(*Data){}
+var commandHandlers = map[string]func(*Data, []string){}
 
 func main() {
 	var data Data
@@ -123,20 +124,21 @@ func main() {
 	}
 
 	// commands
+	args := os.Args[2:]
 	switch cmd {
 	case "complete":
-		data.Complete()
+		data.Complete(args)
 	case "history":
-		data.PrintHistory()
+		data.PrintHistory(args)
 	case "practice":
-		data.Practice()
+		data.Practice(args)
 	case "words":
-		for i, w := range data.Words {
-			p("%-6d %-20s %s\n", i, w.AudioFile, w.Text)
-		}
+		data.ListWords(args)
+	case "edit-word":
+		data.EditWord(args)
 	default:
 		if handler, ok := commandHandlers[cmd]; ok {
-			handler(&data)
+			handler(&data, args)
 		} else {
 			log.Fatalf("unknown command %s", cmd)
 		}
@@ -159,7 +161,7 @@ func (d *Data) AddEntry(entry *Entry) (added bool) {
 	return
 }
 
-func (d *Data) Complete() {
+func (d *Data) Complete([]string) {
 	var text string
 	for _, word := range d.Words {
 		if strings.TrimSpace(word.Text) == "" {
@@ -172,7 +174,7 @@ func (d *Data) Complete() {
 	}
 }
 
-func (data *Data) PrintHistory() {
+func (data *Data) PrintHistory([]string) {
 	counter := make(map[string]int)
 	total := 0
 	for _, entry := range data.Entries {
@@ -263,4 +265,22 @@ func (s EntrySorter) getLevelOrder(e *Entry) int {
 		return 1
 	}
 	return 2 // 0
+}
+
+func (d *Data) ListWords([]string) {
+	for i, w := range d.Words {
+		p("%-6d %-20s %s\n", i, w.AudioFile, w.Text)
+	}
+}
+
+func (d *Data) EditWord(args []string) {
+	n, err := strconv.Atoi(args[0])
+	if err != nil {
+		log.Fatalf("expected word index, not %v", args[0])
+	}
+	word := d.Words[n]
+	fmt.Printf("editing %-20s %s\n", word.AudioFile, word.Text)
+	var text string
+	fmt.Scanf("%s", &text)
+	word.Text = text
 }
