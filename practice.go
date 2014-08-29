@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"sort"
-	"strconv"
 	"sync"
 	"time"
 
@@ -49,7 +48,7 @@ GtkWindow {
 	font-size: 48px;
 	color: #0099CC;
 }
-#level {
+#info {
 	color: grey;
 }
 ]])
@@ -73,8 +72,8 @@ win = Gtk.Window{
 			expand = true,
 		},
 		Gtk.Label{
-			id = 'level',
-			name = 'level',
+			id = 'info',
+			name = 'info',
 		},
 	},
 }
@@ -138,7 +137,8 @@ loop:
 		ui("set-hint", "")
 		ui("set-text", "")
 		lastHistory := e.History[len(e.History)-1]
-		g.ExecEval(`win.child.level:set_label(T)`, "T", strconv.Itoa(lastHistory.Level))
+		g.ExecEval(`win.child.info:set_label(T)`, "T",
+			s("level %d lesson %s", lastHistory.Level, e.Lesson()))
 		res := e.Practice(ui, input)
 		switch res {
 		case LEVEL_UP:
