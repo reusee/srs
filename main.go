@@ -105,10 +105,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer func() {
-		data.save()
-		db.Close()
-	}()
 	data.save = func() {
 		err := db.Save()
 		if err != nil {
@@ -154,6 +150,9 @@ func main() {
 			log.Fatalf("unknown command %s", cmd)
 		}
 	}
+
+	data.save()
+	db.Close()
 
 }
 
