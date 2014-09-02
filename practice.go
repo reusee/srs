@@ -25,28 +25,30 @@ func (data *Data) Practice([]string) {
 	// sort
 	sort.Sort(EntrySorter(entries))
 	// select
-	max := 25
-	maxReview := 20
-	maxNew := 8
-	nReview := 0
-	nNew := 0
+	maxWeight := 250
+	maxReviewWeight := 200
+	maxNewWeight := 80
+	reviewWeight := 0
+	newWeight := 0
+	weight := 0
 	var selected []*Entry
 	for _, entry := range entries {
-		if len(selected) >= max {
+		if weight >= maxWeight {
 			break
 		}
 		lastLevel := entry.History[len(entry.History)-1].Level
-		if lastLevel == 0 && nNew >= maxNew { // new
+		if lastLevel == 0 && newWeight >= maxNewWeight { // new
 			continue
-		} else if lastLevel > 0 && nReview >= maxReview { // review
+		} else if lastLevel > 0 && reviewWeight >= maxReviewWeight { // review
 			continue
 		}
 		selected = append(selected, entry)
 		if lastLevel == 0 {
-			nNew++
+			newWeight += entry.Weight()
 		} else if lastLevel > 0 {
-			nReview++
+			reviewWeight += entry.Weight()
 		}
+		weight += entry.Weight()
 	}
 	// practice
 	ui_gtk(selected, data)

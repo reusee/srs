@@ -45,6 +45,7 @@ type IsEntry interface {
 	Lesson() string
 	PracticeOrder() int
 	Practice(UI, Input) PracticeResult
+	Weight() int
 }
 
 type PracticeResult int

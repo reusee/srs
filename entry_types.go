@@ -39,6 +39,10 @@ func (e *AudioToWordEntry) PracticeOrder() int {
 	return 1
 }
 
+func (e *AudioToWordEntry) Weight() int {
+	return 10
+}
+
 func (e *AudioToWordEntry) Practice(ui UI, input Input) PracticeResult {
 	ui("set-hint", "playing...")
 	playAudio(e.word.AudioFile)
@@ -91,6 +95,10 @@ func (e *WordToAudioEntry) PracticeOrder() int {
 	return 3
 }
 
+func (e *WordToAudioEntry) Weight() int {
+	return 5
+}
+
 func (e *WordToAudioEntry) Practice(ui UI, input Input) PracticeResult {
 	ui("set-text", e.word.Text)
 	ui("set-hint", "press any key to play audio")
@@ -127,6 +135,10 @@ func (sen sentenceCommon) Signature() string {
 
 func (s sentenceCommon) Lesson() string {
 	return lessonPattern.FindStringSubmatch(string(s))[0]
+}
+
+func (s sentenceCommon) Weight() int {
+	return 10
 }
 
 func (s sentenceCommon) Practice(ui UI, input Input) PracticeResult {
