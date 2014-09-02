@@ -27,7 +27,7 @@ func (data *Data) Practice([]string) {
 	// select
 	max := 25
 	maxReview := 20
-	maxNew := 10
+	maxNew := 8
 	nReview := 0
 	nNew := 0
 	var selected []*Entry
