@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"math/rand"
 	"sort"
 	"sync"
 	"time"
@@ -12,18 +13,35 @@ import (
 func (data *Data) Practice([]string) {
 	var entries []*Entry
 	now := time.Now()
+	nReview := 0
+	// filter
 	for _, e := range data.Entries {
 		lastHistory := e.History[len(e.History)-1]
 		if lastHistory.Time.Add(LevelTime[lastHistory.Level]).Before(now) {
 			entries = append(entries, e)
+			if lastHistory.Level > 0 {
+				nReview++
+			}
 		}
 	}
+	p("%d to review, %d new.\n", nReview, len(entries)-nReview)
+	// sort
 	sort.Sort(EntrySorter(entries))
+	// select
 	max := 25
-	if len(entries) > max {
-		entries = entries[:max]
+	maxReview := 20
+	var selected []*Entry
+	for _, entry := range entries {
+		if len(selected) >= max {
+			break
+		}
+		if len(selected) >= maxReview && entry.History[len(entry.History)-1].Level > 0 {
+			continue
+		}
+		selected = append(selected, entry)
 	}
-	ui_gtk(entries, data)
+	// practice
+	ui_gtk(selected, data)
 }
 
 type UI func(what string, args ...interface{})
@@ -55,6 +73,7 @@ GtkWindow {
 Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css, 999)
 
 win = Gtk.Window{
+	title = 'Spaced Repetition System',
 	Gtk.Grid{
 		orientation = 'VERTICAL',
 		Gtk.Label{
@@ -153,4 +172,71 @@ loop:
 	}
 
 	wg.Wait()
+}
+
+type EntrySorter []*Entry
+
+func (s EntrySorter) Len() int { return len(s) }
+
+func (s EntrySorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+func (self EntrySorter) Less(i, j int) bool {
+	left, right := self[i], self[j]
+	leftLastHistory := left.History[len(left.History)-1]
+	rightLastHistory := right.History[len(right.History)-1]
+	leftLesson := left.Lesson()
+	rightLesson := right.Lesson()
+	leftLevelOrder := self.getLevelOrder(left)
+	rightLevelOrder := self.getLevelOrder(right)
+	if leftLevelOrder < rightLevelOrder {
+		return true
+	} else if leftLevelOrder > rightLevelOrder {
+		return false
+	} else if leftLevelOrder == rightLevelOrder && (leftLevelOrder == 1 || leftLevelOrder == 3) { // old connect
+		if leftLastHistory.Level < rightLastHistory.Level { // review low level first
+			return true
+		} else if leftLastHistory.Level > rightLastHistory.Level {
+			return false
+		} else if leftLastHistory.Level == rightLastHistory.Level { // same level
+			if leftLesson < rightLesson { // review earlier lesson first
+				return true
+			} else if leftLesson > rightLesson {
+				return false
+			} else { // randomize
+				if rand.Intn(2) == 1 { // randomize
+					return true
+				}
+				return false
+			}
+		}
+	} else if leftLevelOrder == rightLevelOrder && leftLevelOrder == 2 { // new connect
+		if leftLesson < rightLesson { // learn earlier lesson first
+			return true
+		} else if leftLesson > rightLesson {
+			return false
+		} else { // same lesson
+			leftTypeOrder := left.PracticeOrder()
+			rightTypeOrder := right.PracticeOrder()
+			if leftTypeOrder < rightTypeOrder {
+				return true
+			} else if leftTypeOrder > rightTypeOrder {
+				return false
+			} else {
+				return leftLastHistory.Time.Before(rightLastHistory.Time)
+			}
+			return true
+		}
+		return true
+	}
+	return false
+	return true
+}
+
+func (s EntrySorter) getLevelOrder(e *Entry) int {
+	lastHistory := e.History[len(e.History)-1]
+	if lastHistory.Level > 0 {
+		return 1
+	} else {
+		return 2
+	}
 }
