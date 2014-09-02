@@ -41,7 +41,7 @@ type HistoryEntry struct {
 
 type IsEntry interface {
 	Signature() string
-	Init(*Data)
+	Init(*Data, *Entry)
 	Lesson() string
 	PracticeOrder() int
 	Practice(UI, Input) PracticeResult
@@ -113,7 +113,7 @@ func main() {
 		}
 	}
 	for _, e := range data.Entries {
-		e.Init(&data)
+		e.Init(&data, e)
 	}
 
 	// stat

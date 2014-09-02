@@ -27,7 +27,7 @@ func (e *AudioToWordEntry) Signature() string {
 	return s("atw-%d", e.WordIndex)
 }
 
-func (e *AudioToWordEntry) Init(data *Data) {
+func (e *AudioToWordEntry) Init(data *Data, entry *Entry) {
 	e.word = data.Words[e.WordIndex]
 }
 
@@ -77,14 +77,16 @@ read_key:
 type WordToAudioEntry struct {
 	WordIndex int
 	word      *Word
+	history   []HistoryEntry
 }
 
 func (e *WordToAudioEntry) Signature() string {
 	return s("wta-%d", e.WordIndex)
 }
 
-func (e *WordToAudioEntry) Init(data *Data) {
+func (e *WordToAudioEntry) Init(data *Data, entry *Entry) {
 	e.word = data.Words[e.WordIndex]
+	e.history = entry.History
 }
 
 func (e *WordToAudioEntry) Lesson() string {
@@ -96,7 +98,12 @@ func (e *WordToAudioEntry) PracticeOrder() int {
 }
 
 func (e *WordToAudioEntry) Weight() int {
-	return 5
+	lastLevel := e.history[len(e.history)-1].Level
+	if lastLevel == 0 {
+		return 5
+	} else {
+		return 10
+	}
 }
 
 func (e *WordToAudioEntry) Practice(ui UI, input Input) PracticeResult {
@@ -174,7 +181,7 @@ type SentenceEntry struct {
 	sentenceCommon
 }
 
-func (e *SentenceEntry) Init(*Data) {
+func (e *SentenceEntry) Init(*Data, *Entry) {
 	e.sentenceCommon = sentenceCommon(e.AudioFile)
 }
 
@@ -189,7 +196,7 @@ type DialogEntry struct {
 	sentenceCommon
 }
 
-func (e *DialogEntry) Init(*Data) {
+func (e *DialogEntry) Init(*Data, *Entry) {
 	e.sentenceCommon = sentenceCommon(e.AudioFile)
 }
 
