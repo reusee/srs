@@ -13,32 +13,40 @@ import (
 func (data *Data) Practice([]string) {
 	var entries []*Entry
 	now := time.Now()
-	nReview := 0
 	// filter
 	for _, e := range data.Entries {
 		lastHistory := e.History[len(e.History)-1]
 		if lastHistory.Time.Add(LevelTime[lastHistory.Level]).Before(now) {
 			entries = append(entries, e)
 			if lastHistory.Level > 0 {
-				nReview++
 			}
 		}
 	}
-	p("%d to review, %d new.\n", nReview, len(entries)-nReview)
 	// sort
 	sort.Sort(EntrySorter(entries))
 	// select
 	max := 25
 	maxReview := 20
+	maxNew := 10
+	nReview := 0
+	nNew := 0
 	var selected []*Entry
 	for _, entry := range entries {
 		if len(selected) >= max {
 			break
 		}
-		if len(selected) >= maxReview && entry.History[len(entry.History)-1].Level > 0 {
+		lastLevel := entry.History[len(entry.History)-1].Level
+		if lastLevel == 0 && nNew >= maxNew { // new
+			continue
+		} else if lastLevel > 0 && nReview >= maxReview { // review
 			continue
 		}
 		selected = append(selected, entry)
+		if lastLevel == 0 {
+			nNew++
+		} else if lastLevel > 0 {
+			nReview++
+		}
 	}
 	// practice
 	ui_gtk(selected, data)
