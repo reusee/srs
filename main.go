@@ -23,29 +23,15 @@ var (
 )
 
 type Data struct {
-	Entries      []*Entry
 	SignatureSet map[string]struct{}
 	Words        []*Word
 	save         func()
-}
-
-type Entry struct {
-	History []HistoryEntry
-	IsEntry
+	Practices    []PracticeEntry
 }
 
 type HistoryEntry struct {
 	Level int
 	Time  time.Time
-}
-
-type IsEntry interface {
-	Signature() string
-	Init(*Data, *Entry)
-	Lesson() string
-	PracticeOrder() int
-	Practice(UI, Input) PracticeResult
-	Weight() int
 }
 
 type PracticeResult int
@@ -75,11 +61,58 @@ func (d *Data) GetWordIndex(audioFile string, text string) int {
 	return len(d.Words) - 1
 }
 
-var rootPath string
+type PracticeEntry interface {
+	Signature() string
+	Init(*Data)
+	Lesson() string
+	PracticeOrder() int
+	Practice(UI, Input) PracticeResult
+	Weight() int
 
-var LevelTime = []time.Duration{
-	0,
+	LastHistory() HistoryEntry
+	LevelUp()
+	LevelReset()
+	AddHistory(HistoryEntry)
+	GetHistory() []HistoryEntry
 }
+
+type HistoryImpl struct {
+	History []HistoryEntry
+}
+
+func (h HistoryImpl) LastHistory() HistoryEntry {
+	return h.History[len(h.History)-1]
+}
+
+func (h *HistoryImpl) LevelUp() {
+	h.History = append(h.History, HistoryEntry{
+		Level: h.LastHistory().Level + 1,
+		Time:  time.Now(),
+	})
+}
+
+func (h *HistoryImpl) LevelReset() {
+	h.History = append(h.History, HistoryEntry{
+		Level: 0,
+		Time:  time.Now(),
+	})
+}
+
+func (h *HistoryImpl) AddHistory(entry HistoryEntry) {
+	h.History = append(h.History, entry)
+}
+
+func (h HistoryImpl) GetHistory() []HistoryEntry {
+	return h.History
+}
+
+var (
+	rootPath string
+
+	LevelTime = []time.Duration{
+		0,
+	}
+)
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -112,12 +145,12 @@ func main() {
 			panic(err)
 		}
 	}
-	for _, e := range data.Entries {
-		e.Init(&data, e)
+	for _, e := range data.Practices {
+		e.Init(&data)
 	}
 
 	// stat
-	fmt.Printf("%d practice entries, %d words\n", len(data.Entries), len(data.Words))
+	fmt.Printf("%d practice entries, %d words\n", len(data.Practices), len(data.Words))
 
 	cmd := "practice"
 	if len(os.Args) > 1 {
@@ -141,9 +174,7 @@ func main() {
 	case "edit-word":
 		data.EditWord(args)
 	case "fix":
-		for _, e := range data.Entries {
-			data.SignatureSet[e.Signature()] = struct{}{}
-		}
+
 	default:
 		if handler, ok := commandHandlers[cmd]; ok {
 			handler(&data, args)
@@ -161,12 +192,12 @@ func playAudio(f string) {
 	exec.Command("mpg123", filepath.Join(rootPath, "files", f)).Run()
 }
 
-func (d *Data) AddEntry(entry *Entry) (added bool) {
+func (d *Data) AddEntry(entry PracticeEntry) (added bool) {
 	sig := entry.Signature()
 	if _, has := d.SignatureSet[sig]; has {
 		return
 	}
-	d.Entries = append(d.Entries, entry)
+	d.Practices = append(d.Practices, entry)
 	d.SignatureSet[sig] = struct{}{}
 	added = true
 	return
@@ -188,8 +219,8 @@ func (d *Data) Complete([]string) {
 func (data *Data) PrintHistory([]string) {
 	counter := make(map[string]int)
 	total := 0
-	for _, entry := range data.Entries {
-		for _, h := range entry.History {
+	for _, entry := range data.Practices {
+		for _, h := range entry.GetHistory() {
 			if h.Level == 0 {
 				continue
 			}

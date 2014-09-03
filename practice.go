@@ -11,15 +11,13 @@ import (
 )
 
 func (data *Data) Practice([]string) {
-	var entries []*Entry
+	var entries []PracticeEntry
 	now := time.Now()
 	// filter
-	for _, e := range data.Entries {
-		lastHistory := e.History[len(e.History)-1]
+	for _, e := range data.Practices {
+		lastHistory := e.LastHistory()
 		if lastHistory.Time.Add(LevelTime[lastHistory.Level]).Before(now) {
 			entries = append(entries, e)
-			if lastHistory.Level > 0 {
-			}
 		}
 	}
 	// sort
@@ -31,12 +29,12 @@ func (data *Data) Practice([]string) {
 	reviewWeight := 0
 	newWeight := 0
 	weight := 0
-	var selected []*Entry
+	var selected []PracticeEntry
 	for _, entry := range entries {
 		if weight >= maxWeight {
 			break
 		}
-		lastLevel := entry.History[len(entry.History)-1].Level
+		lastLevel := entry.LastHistory().Level
 		if lastLevel == 0 && newWeight >= maxNewWeight { // new
 			continue
 		} else if lastLevel > 0 && reviewWeight >= maxReviewWeight { // review
@@ -58,7 +56,7 @@ type UI func(what string, args ...interface{})
 
 type Input func() rune
 
-func ui_gtk(entries []*Entry, data *Data) {
+func ui_gtk(entries []PracticeEntry, data *Data) {
 	keys := make(chan rune)
 	g, err := lgtk.New(`
 Gdk = lgi.Gdk
@@ -165,16 +163,16 @@ loop:
 	for _, e := range entries {
 		ui("set-hint", "")
 		ui("set-text", "")
-		lastHistory := e.History[len(e.History)-1]
+		lastHistory := e.LastHistory()
 		g.ExecEval(`win.child.info:set_label(T)`, "T",
 			s("level %d lesson %s", lastHistory.Level, e.Lesson()))
 		res := e.Practice(ui, input)
 		switch res {
 		case LEVEL_UP:
-			e.History = append(e.History, HistoryEntry{Level: lastHistory.Level + 1, Time: time.Now()})
+			e.LevelUp()
 			save()
 		case LEVEL_RESET:
-			e.History = append(e.History, HistoryEntry{Level: 0, Time: time.Now()})
+			e.LevelReset()
 			save()
 		case EXIT:
 			break loop
@@ -184,7 +182,7 @@ loop:
 	wg.Wait()
 }
 
-type EntrySorter []*Entry
+type EntrySorter []PracticeEntry
 
 func (s EntrySorter) Len() int { return len(s) }
 
@@ -192,8 +190,8 @@ func (s EntrySorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 func (self EntrySorter) Less(i, j int) bool {
 	left, right := self[i], self[j]
-	leftLastHistory := left.History[len(left.History)-1]
-	rightLastHistory := right.History[len(right.History)-1]
+	leftLastHistory := left.LastHistory()
+	rightLastHistory := right.LastHistory()
 	leftLesson := left.Lesson()
 	rightLesson := right.Lesson()
 	leftLevelOrder := self.getLevelOrder(left)
@@ -234,16 +232,13 @@ func (self EntrySorter) Less(i, j int) bool {
 			} else {
 				return leftLastHistory.Time.Before(rightLastHistory.Time)
 			}
-			return true
 		}
-		return true
 	}
 	return false
-	return true
 }
 
-func (s EntrySorter) getLevelOrder(e *Entry) int {
-	lastHistory := e.History[len(e.History)-1]
+func (s EntrySorter) getLevelOrder(e PracticeEntry) int {
+	lastHistory := e.LastHistory()
 	if lastHistory.Level > 0 {
 		return 1
 	} else {

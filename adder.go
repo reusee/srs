@@ -21,14 +21,14 @@ func AddWords(data *Data, args []string) {
 		audioFile = strings.TrimPrefix(audioFile, filepath.Join(rootPath, "files"))
 		index := data.GetWordIndex(audioFile, "")
 		// audio to word entry
-		entry := &Entry{
-			IsEntry: &AudioToWordEntry{
-				WordIndex: index,
-			},
-			History: []HistoryEntry{
-				{
-					Level: 0,
-					Time:  time.Now(),
+		entry := &AudioToWordEntry{
+			WordIndex: index,
+			HistoryImpl: &HistoryImpl{
+				History: []HistoryEntry{
+					{
+						Level: 0,
+						Time:  time.Now(),
+					},
 				},
 			},
 		}
@@ -39,18 +39,18 @@ func AddWords(data *Data, args []string) {
 			p("skip %s\n", audioFile)
 		}
 		// word to audio entry
-		entry = &Entry{
-			IsEntry: &WordToAudioEntry{
-				WordIndex: index,
-			},
-			History: []HistoryEntry{
-				{
-					Level: 0,
-					Time:  time.Now(),
+		entry2 := &WordToAudioEntry{
+			WordIndex: index,
+			HistoryImpl: &HistoryImpl{
+				History: []HistoryEntry{
+					{
+						Level: 0,
+						Time:  time.Now(),
+					},
 				},
 			},
 		}
-		added = data.AddEntry(entry)
+		added = data.AddEntry(entry2)
 		if added {
 			p("added WordToAudioEntry %s\n", audioFile)
 		} else {
@@ -68,15 +68,15 @@ func AddSentences(data *Data, args []string) {
 		}
 		audioFile = strings.TrimPrefix(audioFile, filepath.Join(rootPath, "files"))
 		// add sentence
-		entry := &Entry{
-			IsEntry: &SentenceEntry{
-				AudioFile:      audioFile,
-				sentenceCommon: sentenceCommon(audioFile),
-			},
-			History: []HistoryEntry{
-				{
-					Level: 0,
-					Time:  time.Now(),
+		entry := &SentenceEntry{
+			AudioFile:      audioFile,
+			sentenceCommon: sentenceCommon(audioFile),
+			HistoryImpl: &HistoryImpl{
+				History: []HistoryEntry{
+					{
+						Level: 0,
+						Time:  time.Now(),
+					},
 				},
 			},
 		}
@@ -97,15 +97,15 @@ func AddDialogs(data *Data, args []string) {
 		}
 		audioFile = strings.TrimPrefix(audioFile, filepath.Join(rootPath, "files"))
 		// add sentence
-		entry := &Entry{
-			IsEntry: &DialogEntry{
-				AudioFile:      audioFile,
-				sentenceCommon: sentenceCommon(audioFile),
-			},
-			History: []HistoryEntry{
-				{
-					Level: 0,
-					Time:  time.Now(),
+		entry := &DialogEntry{
+			AudioFile:      audioFile,
+			sentenceCommon: sentenceCommon(audioFile),
+			HistoryImpl: &HistoryImpl{
+				History: []HistoryEntry{
+					{
+						Level: 0,
+						Time:  time.Now(),
+					},
 				},
 			},
 		}
