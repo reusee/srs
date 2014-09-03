@@ -132,6 +132,10 @@ read_key:
 
 // sentence common
 
+type sentenceCommon_ struct {
+	AudioFile string
+}
+
 type sentenceCommon string
 
 func (sen sentenceCommon) Signature() string {
@@ -176,6 +180,7 @@ read_key:
 type SentenceEntry struct {
 	*HistoryImpl
 	sentenceCommon
+	sentenceCommon_
 	AudioFile string
 }
 
@@ -192,6 +197,7 @@ func (e *SentenceEntry) PracticeOrder() int {
 type DialogEntry struct {
 	*HistoryImpl
 	sentenceCommon
+	sentenceCommon_
 	AudioFile string
 }
 
