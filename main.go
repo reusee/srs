@@ -189,7 +189,7 @@ func main() {
 }
 
 func playAudio(f string) {
-	exec.Command("mpg123", filepath.Join(rootPath, "files", f)).Run()
+	exec.Command("mplayer", filepath.Join(rootPath, "files", f)).Run()
 }
 
 func (d *Data) AddEntry(entry PracticeEntry) (added bool) {
