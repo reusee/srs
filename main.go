@@ -23,10 +23,10 @@ var (
 )
 
 type Data struct {
+	Practices    []PracticeEntry
 	SignatureSet map[string]struct{}
 	Words        []*Word
 	save         func()
-	Practices    []PracticeEntry
 }
 
 type HistoryEntry struct {
