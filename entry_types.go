@@ -191,6 +191,8 @@ func (e *SentenceEntry) Weight() int {
 	switch e.LastHistory().Level {
 	case 1:
 		return 20
+	case 2:
+		return 15
 	}
 	return 10
 }
