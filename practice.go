@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"math"
 	"math/rand"
 	"sort"
 	"sync"
@@ -10,22 +12,73 @@ import (
 	"github.com/reusee/lgtk"
 )
 
+var (
+	LevelTime = []time.Duration{
+		0,
+	}
+)
+
+func init() {
+	base := 2.25
+	for i := 0.0; i < 12; i++ {
+		t := time.Duration(float64(time.Hour*24) * math.Pow(base, i))
+		LevelTime = append(LevelTime, t)
+		//fmt.Printf("%s\n", formatDuration(t))
+	}
+}
+
+func formatDuration(duration time.Duration) string {
+	var ret string
+	var m, h, d, y time.Duration
+	m = duration / time.Minute
+	if m >= 60 {
+		h = m / 60
+		m = m % 60
+	}
+	if h >= 24 {
+		d = h / 24
+		h = h % 24
+	}
+	if d > 365 {
+		y = d / 365
+		d = d % 365
+	}
+	if y > 0 {
+		ret += fmt.Sprintf("%dyears.", y)
+	}
+	if d > 0 {
+		ret += fmt.Sprintf("%ddays.", d)
+	}
+	if h > 0 {
+		ret += fmt.Sprintf("%dhours.", h)
+	}
+	if m > 0 {
+		ret += fmt.Sprintf("%dmins.", m)
+	}
+	return ret
+}
+
 func (data *Data) Practice([]string) {
 	var entries []PracticeEntry
 	now := time.Now()
 	// filter
+	nReview := 0
 	for _, e := range data.Practices {
 		lastHistory := e.LastHistory()
 		if lastHistory.Time.Add(LevelTime[lastHistory.Level]).Before(now) {
 			entries = append(entries, e)
+			if lastHistory.Level > 0 {
+				nReview++
+			}
 		}
 	}
+	p("%d entries to review\n", nReview)
 	// sort
 	sort.Sort(EntrySorter(entries))
 	// select
 	maxWeight := 250
-	maxReviewWeight := 200
-	maxNewWeight := 80
+	maxReviewWeight := 220
+	maxNewWeight := 50
 	reviewWeight := 0
 	newWeight := 0
 	weight := 0

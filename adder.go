@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"path/filepath"
 	"strings"
 	"time"
@@ -16,7 +17,7 @@ func AddWords(data *Data, args []string) {
 	for _, audioFile := range args {
 		audioFile, err := filepath.Abs(audioFile)
 		if err != nil {
-			panic(err)
+			log.Fatalf("AddWords: wrong audio file path %v", err)
 		}
 		audioFile = strings.TrimPrefix(audioFile, filepath.Join(rootPath, "files"))
 		index := data.GetWordIndex(audioFile, "")
@@ -64,7 +65,7 @@ func AddSentences(data *Data, args []string) {
 	for _, audioFile := range args {
 		audioFile, err := filepath.Abs(audioFile)
 		if err != nil {
-			panic(err)
+			log.Fatalf("AddSentences: wrong audio file path %v", err)
 		}
 		audioFile = strings.TrimPrefix(audioFile, filepath.Join(rootPath, "files"))
 		// add sentence
@@ -93,7 +94,7 @@ func AddDialogs(data *Data, args []string) {
 	for _, audioFile := range args {
 		audioFile, err := filepath.Abs(audioFile)
 		if err != nil {
-			panic(err)
+			log.Fatalf("AddDialogs: wrong audio file path %v", err)
 		}
 		audioFile = strings.TrimPrefix(audioFile, filepath.Join(rootPath, "files"))
 		// add sentence

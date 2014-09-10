@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"math"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -108,10 +107,6 @@ func (h HistoryImpl) GetHistory() []HistoryEntry {
 
 var (
 	rootPath string
-
-	LevelTime = []time.Duration{
-		0,
-	}
 )
 
 func init() {
@@ -120,12 +115,6 @@ func init() {
 	_, rootPath, _, _ = runtime.Caller(0)
 	rootPath, _ = filepath.Abs(rootPath)
 	rootPath = filepath.Dir(rootPath)
-
-	base := 2.2
-	for i := 0.0; i < 12; i++ {
-		t := time.Duration(float64(time.Hour*24) * math.Pow(base, i))
-		LevelTime = append(LevelTime, t)
-	}
 }
 
 var commandHandlers = map[string]func(*Data, []string){}
@@ -137,12 +126,12 @@ func main() {
 
 	db, err := gobfile.New(&data, filepath.Join(rootPath, "db.gob"), 47213)
 	if err != nil {
-		panic(err)
+		log.Fatalf("open database error: %v", err)
 	}
 	data.save = func() {
 		err := db.Save()
 		if err != nil {
-			panic(err)
+			log.Fatalf("save database error: %v", err)
 		}
 	}
 	for _, e := range data.Practices {
