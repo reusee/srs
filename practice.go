@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"math"
 	"math/rand"
@@ -19,7 +18,7 @@ var (
 )
 
 func init() {
-	base := 2.25
+	base := 2.2
 	for i := 0.0; i < 12; i++ {
 		t := time.Duration(float64(time.Hour*24) * math.Pow(base, i))
 		LevelTime = append(LevelTime, t)
@@ -27,46 +26,24 @@ func init() {
 	}
 }
 
-func formatDuration(duration time.Duration) string {
-	var ret string
-	var m, h, d, y time.Duration
-	m = duration / time.Minute
-	if m >= 60 {
-		h = m / 60
-		m = m % 60
-	}
-	if h >= 24 {
-		d = h / 24
-		h = h % 24
-	}
-	if d > 365 {
-		y = d / 365
-		d = d % 365
-	}
-	if y > 0 {
-		ret += fmt.Sprintf("%dyears.", y)
-	}
-	if d > 0 {
-		ret += fmt.Sprintf("%ddays.", d)
-	}
-	if h > 0 {
-		ret += fmt.Sprintf("%dhours.", h)
-	}
-	if m > 0 {
-		ret += fmt.Sprintf("%dmins.", m)
-	}
-	return ret
+type EntryInfo struct {
+	PracticeEntry
+	late time.Duration
 }
 
 func (data *Data) Practice([]string) {
-	var entries []PracticeEntry
+	var entries []EntryInfo
 	now := time.Now()
 	// filter
 	nReview := 0
 	for _, e := range data.Practices {
 		lastHistory := e.LastHistory()
 		if lastHistory.Time.Add(LevelTime[lastHistory.Level]).Before(now) {
-			entries = append(entries, e)
+			entries = append(entries, EntryInfo{
+				PracticeEntry: e,
+				late: now.Sub(
+					lastHistory.Time.Add(time.Duration(float64(LevelTime[lastHistory.Level]) * 1.2))),
+			})
 			if lastHistory.Level > 0 {
 				nReview++
 			}
@@ -82,7 +59,7 @@ func (data *Data) Practice([]string) {
 	reviewWeight := 0
 	newWeight := 0
 	weight := 0
-	var selected []PracticeEntry
+	var selected []EntryInfo
 	for _, entry := range entries {
 		if weight >= maxWeight {
 			break
@@ -109,7 +86,7 @@ type UI func(what string, args ...interface{})
 
 type Input func() rune
 
-func ui_gtk(entries []PracticeEntry, data *Data) {
+func ui_gtk(entries []EntryInfo, data *Data) {
 	keys := make(chan rune)
 	g, err := lgtk.New(`
 Gdk = lgi.Gdk
@@ -217,8 +194,12 @@ loop:
 		ui("set-hint", "")
 		ui("set-text", "")
 		lastHistory := e.LastHistory()
+		var lateStr string
+		if e.late > 0 {
+			lateStr = s(" late %s", formatDuration(e.late))
+		}
 		g.ExecEval(`win.child.info:set_label(T)`, "T",
-			s("level %d lesson %s", lastHistory.Level, e.Lesson()))
+			s("level %d lesson %s%s", lastHistory.Level, e.Lesson(), lateStr))
 		res := e.Practice(ui, input)
 		switch res {
 		case LEVEL_UP:
@@ -235,7 +216,7 @@ loop:
 	wg.Wait()
 }
 
-type EntrySorter []PracticeEntry
+type EntrySorter []EntryInfo
 
 func (s EntrySorter) Len() int { return len(s) }
 
@@ -253,24 +234,28 @@ func (self EntrySorter) Less(i, j int) bool {
 		return true
 	} else if leftLevelOrder > rightLevelOrder {
 		return false
-	} else if leftLevelOrder == rightLevelOrder && (leftLevelOrder == 1 || leftLevelOrder == 3) { // old connect
-		if leftLastHistory.Level < rightLastHistory.Level { // review low level first
-			return true
-		} else if leftLastHistory.Level > rightLastHistory.Level {
-			return false
-		} else if leftLastHistory.Level == rightLastHistory.Level { // same level
-			if leftLesson < rightLesson { // review earlier lesson first
+	} else if leftLevelOrder == rightLevelOrder && leftLevelOrder == 1 { // entry to review
+		if left.late < 0 && right.late < 0 { // both is not late
+			if leftLastHistory.Level < rightLastHistory.Level { // review low level first
 				return true
-			} else if leftLesson > rightLesson {
+			} else if leftLastHistory.Level > rightLastHistory.Level {
 				return false
-			} else { // randomize
-				if rand.Intn(2) == 1 { // randomize
+			} else if leftLastHistory.Level == rightLastHistory.Level { // same level
+				if leftLesson < rightLesson { // review earlier lesson first
 					return true
+				} else if leftLesson > rightLesson {
+					return false
+				} else { // same lesson randomize
+					if rand.Intn(2) == 1 { // randomize
+						return true
+					}
+					return false
 				}
-				return false
 			}
+		} else {
+			return left.late > right.late
 		}
-	} else if leftLevelOrder == rightLevelOrder && leftLevelOrder == 2 { // new connect
+	} else if leftLevelOrder == rightLevelOrder && leftLevelOrder == 2 { // new entry
 		if leftLesson < rightLesson { // learn earlier lesson first
 			return true
 		} else if leftLesson > rightLesson {
