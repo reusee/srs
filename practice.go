@@ -28,7 +28,7 @@ func init() {
 
 type EntryInfo struct {
 	PracticeEntry
-	late time.Duration
+	late float64
 }
 
 func (data *Data) Practice([]string) {
@@ -40,10 +40,11 @@ func (data *Data) Practice([]string) {
 	for _, e := range data.Practices {
 		lastHistory := e.LastHistory()
 		if lastHistory.Time.Add(LevelTime[lastHistory.Level]).Before(now) {
-			var late time.Duration
+			var late float64
 			if lastHistory.Level > 0 {
-				late = now.Sub(
-					lastHistory.Time.Add(time.Duration(float64(LevelTime[lastHistory.Level]) * 1.1)))
+				late = float64(now.Sub(
+					lastHistory.Time.Add(time.Duration(float64(LevelTime[lastHistory.Level]) * 1.1)))) /
+					float64(LevelTime[lastHistory.Level])
 			}
 			entries = append(entries, EntryInfo{
 				PracticeEntry: e,
@@ -207,7 +208,7 @@ loop:
 		lastHistory := e.LastHistory()
 		var lateStr string
 		if e.late > 0 {
-			lateStr = s(" late %s", formatDuration(e.late))
+			lateStr = s(" late %f", e.late)
 		}
 		g.ExecEval(`win.child.info:set_label(T)`, "T",
 			s("level %d lesson %s%s", lastHistory.Level, e.Lesson(), lateStr))
