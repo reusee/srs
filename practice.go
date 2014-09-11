@@ -42,7 +42,7 @@ func (data *Data) Practice([]string) {
 			var late time.Duration
 			if lastHistory.Level > 0 {
 				late = now.Sub(
-					lastHistory.Time.Add(time.Duration(float64(LevelTime[lastHistory.Level]) * 1.15)))
+					lastHistory.Time.Add(time.Duration(float64(LevelTime[lastHistory.Level]) * 1.1)))
 			}
 			entries = append(entries, EntryInfo{
 				PracticeEntry: e,
@@ -57,8 +57,8 @@ func (data *Data) Practice([]string) {
 	// sort
 	sort.Sort(EntrySorter(entries))
 	// select
-	maxWeight := 250
-	maxReviewWeight := 220
+	maxWeight := 300
+	maxReviewWeight := 270
 	maxNewWeight := 50
 	reviewWeight := 0
 	newWeight := 0
