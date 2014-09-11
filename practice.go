@@ -39,10 +39,14 @@ func (data *Data) Practice([]string) {
 	for _, e := range data.Practices {
 		lastHistory := e.LastHistory()
 		if lastHistory.Time.Add(LevelTime[lastHistory.Level]).Before(now) {
+			var late time.Duration
+			if lastHistory.Level > 0 {
+				late = now.Sub(
+					lastHistory.Time.Add(time.Duration(float64(LevelTime[lastHistory.Level]) * 1.15)))
+			}
 			entries = append(entries, EntryInfo{
 				PracticeEntry: e,
-				late: now.Sub(
-					lastHistory.Time.Add(time.Duration(float64(LevelTime[lastHistory.Level]) * 1.2))),
+				late:          late,
 			})
 			if lastHistory.Level > 0 {
 				nReview++
