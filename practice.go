@@ -36,6 +36,7 @@ func (data *Data) Practice([]string) {
 	now := time.Now()
 	// filter
 	nReview := 0
+	levelStat := make(map[int]int)
 	for _, e := range data.Practices {
 		lastHistory := e.LastHistory()
 		if lastHistory.Time.Add(LevelTime[lastHistory.Level]).Before(now) {
@@ -51,9 +52,15 @@ func (data *Data) Practice([]string) {
 			if lastHistory.Level > 0 {
 				nReview++
 			}
+			levelStat[lastHistory.Level]++
 		}
 	}
 	p("%d entries to review\n", nReview)
+	for i := 1; i < 16; i++ {
+		if n := levelStat[i]; n > 0 {
+			p("%d %d\n", i, n)
+		}
+	}
 	// sort
 	sort.Sort(EntrySorter(entries))
 	// select
