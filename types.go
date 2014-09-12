@@ -41,6 +41,10 @@ func (e *AudioToWordEntry) PracticeOrder() int {
 }
 
 func (e *AudioToWordEntry) Weight() int {
+	lastLevel := e.LastHistory().Level
+	if lastLevel >= 6 {
+		return 8
+	}
 	return 10
 }
 
@@ -98,11 +102,10 @@ func (e *WordToAudioEntry) PracticeOrder() int {
 
 func (e *WordToAudioEntry) Weight() int {
 	lastLevel := e.LastHistory().Level
-	if lastLevel == 0 {
+	if lastLevel >= 6 {
 		return 5
-	} else {
-		return 10
 	}
+	return 7
 }
 
 func (e *WordToAudioEntry) Practice(ui UI, input Input) PracticeResult {
@@ -193,8 +196,13 @@ func (e *SentenceEntry) Weight() int {
 		return 20
 	case 2:
 		return 15
+	case 3, 4, 5:
+		return 10
+	case 6:
+		return 8
+	default:
+		return 6
 	}
-	return 10
 }
 
 // dialog
