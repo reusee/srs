@@ -43,7 +43,7 @@ func (data *Data) Practice([]string) {
 			var late float64
 			if lastHistory.Level > 0 {
 				late = float64(now.Sub(
-					lastHistory.Time.Add(time.Duration(float64(LevelTime[lastHistory.Level]) * 1.1)))) /
+					lastHistory.Time.Add(time.Duration(float64(LevelTime[lastHistory.Level])*1.1)))) /
 					float64(LevelTime[lastHistory.Level])
 			}
 			entries = append(entries, EntryInfo{
@@ -62,11 +62,13 @@ func (data *Data) Practice([]string) {
 			p("%d %d\n", i, n)
 		}
 	}
+
 	// sort
 	sort.Sort(EntrySorter(entries))
+
 	// select
-	maxWeight := 300
-	maxReviewWeight := 270
+	maxWeight := 250
+	maxReviewWeight := 220
 	maxNewWeight := 50
 	reviewWeight := 0
 	newWeight := 0
@@ -90,6 +92,7 @@ func (data *Data) Practice([]string) {
 		}
 		weight += entry.Weight()
 	}
+
 	// practice
 	ui_gtk(selected, data)
 }
@@ -240,58 +243,57 @@ func (self EntrySorter) Less(i, j int) bool {
 	rightLastHistory := right.LastHistory()
 	leftLesson := left.Lesson()
 	rightLesson := right.Lesson()
-	leftLevelOrder := self.getLevelOrder(left)
-	rightLevelOrder := self.getLevelOrder(right)
-	if leftLevelOrder < rightLevelOrder {
-		return true
-	} else if leftLevelOrder > rightLevelOrder {
-		return false
-	} else if leftLevelOrder == rightLevelOrder && leftLevelOrder == 1 { // entry to review
-		if left.late < 0 && right.late < 0 { // both is not late
-			if leftLastHistory.Level < rightLastHistory.Level { // review low level first
+	if leftLastHistory.Level == 0 {
+		if rightLastHistory.Level == 0 { // new entry
+			if leftLesson < rightLesson { // learn earlier lesson first
 				return true
-			} else if leftLastHistory.Level > rightLastHistory.Level {
+			} else if leftLesson > rightLesson {
 				return false
-			} else if leftLastHistory.Level == rightLastHistory.Level { // same level
-				if leftLesson < rightLesson { // review earlier lesson first
+			} else { // same lesson
+				leftTypeOrder := left.PracticeOrder()
+				rightTypeOrder := right.PracticeOrder()
+				if leftTypeOrder < rightTypeOrder {
 					return true
-				} else if leftLesson > rightLesson {
+				} else if leftTypeOrder > rightTypeOrder {
 					return false
-				} else { // same lesson randomize
-					if rand.Intn(2) == 1 { // randomize
-						return true
-					}
-					return false
+				} else {
+					return leftLastHistory.Time.Before(rightLastHistory.Time)
 				}
 			}
 		} else {
-			return left.late > right.late
-		}
-	} else if leftLevelOrder == rightLevelOrder && leftLevelOrder == 2 { // new entry
-		if leftLesson < rightLesson { // learn earlier lesson first
-			return true
-		} else if leftLesson > rightLesson {
 			return false
-		} else { // same lesson
-			leftTypeOrder := left.PracticeOrder()
-			rightTypeOrder := right.PracticeOrder()
-			if leftTypeOrder < rightTypeOrder {
-				return true
-			} else if leftTypeOrder > rightTypeOrder {
+		}
+	} else {
+		if rightLastHistory.Level == 0 {
+			return true
+		} else { // review entry
+			if left.late < 0 && right.late < 0 { // both is not late
+				if leftLastHistory.Level < rightLastHistory.Level { // review low level first
+					return true
+				} else if leftLastHistory.Level > rightLastHistory.Level {
+					return false
+				} else if leftLastHistory.Level == rightLastHistory.Level { // same level
+					if leftLesson < rightLesson { // review earlier lesson first
+						return true
+					} else if leftLesson > rightLesson {
+						return false
+					} else { // same lesson randomize
+						if rand.Intn(2) == 1 { // randomize
+							return true
+						}
+						return false
+					}
+				}
+			} else if left.late > 0 && right.late > 0 && leftLesson == rightLesson { // randomize same lesson
+				if rand.Intn(2) == 1 {
+					return true
+				}
 				return false
 			} else {
-				return leftLastHistory.Time.Before(rightLastHistory.Time)
+				return left.late > right.late
 			}
 		}
 	}
+	panic("not here")
 	return false
-}
-
-func (s EntrySorter) getLevelOrder(e PracticeEntry) int {
-	lastHistory := e.LastHistory()
-	if lastHistory.Level > 0 {
-		return 1
-	} else {
-		return 2
-	}
 }
