@@ -42,8 +42,10 @@ func (e *AudioToWordEntry) PracticeOrder() int {
 
 func (e *AudioToWordEntry) Weight() int {
 	lastLevel := e.LastHistory().Level
-	if lastLevel >= 6 {
+	if lastLevel == 6 {
 		return 8
+	} else if lastLevel >= 7 {
+		return 6
 	}
 	return 10
 }
@@ -145,10 +147,6 @@ func (s sentenceCommon) Lesson() string {
 	return lessonPattern.FindStringSubmatch(string(s))[0]
 }
 
-func (s sentenceCommon) Weight() int {
-	return 10
-}
-
 func (s sentenceCommon) Practice(ui UI, input Input) PracticeResult {
 	ui("set-hint", "playing...")
 	playAudio(string(s))
@@ -200,7 +198,7 @@ func (e *SentenceEntry) Weight() int {
 		return 10
 	case 6:
 		return 8
-	default:
+	default: // >= 7
 		return 6
 	}
 }
@@ -219,4 +217,8 @@ func (e *DialogEntry) Init(*Data) {
 
 func (e *DialogEntry) PracticeOrder() int {
 	return 4
+}
+
+func (e *DialogEntry) Weight() int {
+	return 10
 }
