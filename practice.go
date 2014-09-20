@@ -94,6 +94,7 @@ func (data *Data) Practice([]string) {
 	}
 
 	// practice
+	p("%d entries to practice\n", len(selected))
 	ui_gtk(selected, data)
 }
 
