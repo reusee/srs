@@ -67,8 +67,8 @@ func (data *Data) Practice([]string) {
 	sort.Sort(EntrySorter(entries))
 
 	// select
-	maxWeight := 250
-	maxReviewWeight := 200
+	maxWeight := 200
+	maxReviewWeight := 150
 	maxNewWeight := 80
 	reviewWeight := 0
 	newWeight := 0
