@@ -138,9 +138,6 @@ func main() {
 		e.Init(&data)
 	}
 
-	// stat
-	fmt.Printf("%d practice entries, %d words\n", len(data.Practices), len(data.Words))
-
 	cmd := "practice"
 	if len(os.Args) > 1 {
 		cmd = os.Args[1]

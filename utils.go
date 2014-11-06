@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+var (
+	pt = fmt.Printf
+)
+
 func formatDuration(duration time.Duration) string {
 	var ret string
 	var m, h, d, y time.Duration
