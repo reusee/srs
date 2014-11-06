@@ -69,7 +69,7 @@ func (data *Data) Practice([]string) {
 	// select
 	maxWeight := 500
 	maxReviewWeight := 200
-	maxNewWeight := 10
+	maxNewWeight := 50
 	reviewWeight := 0
 	newWeight := 0
 	weight := 0
@@ -150,6 +150,7 @@ win = Gtk.Window{
 		},
 	},
 }
+win.child.text:set_line_wrap(true)
 
 function win:on_key_press_event(ev)
 	Key(ev.keyval)
