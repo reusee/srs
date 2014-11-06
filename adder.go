@@ -11,6 +11,7 @@ func init() {
 	commandHandlers["add-words"] = AddWords
 	commandHandlers["add-sentences"] = AddSentences
 	commandHandlers["add-dialogs"] = AddDialogs
+	commandHandlers["add-serihu"] = AddWords
 }
 
 func AddWords(data *Data, args []string) {
