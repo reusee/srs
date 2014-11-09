@@ -95,14 +95,14 @@ func (data *Data) Practice([]string) {
 
 	// practice
 	p("%d entries to practice\n", len(selected))
-	ui_gtk(selected, data)
+	runPractice(selected, data)
 }
 
 type UI func(what string, args ...interface{})
 
 type Input func() rune
 
-func ui_gtk(entries []EntryInfo, data *Data) {
+func runPractice(entries []EntryInfo, data *Data) {
 	keys := make(chan rune)
 	g, err := lgtk.New(`
 Gdk = lgi.Gdk
