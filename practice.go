@@ -1,14 +1,13 @@
 package main
 
 import (
-	"log"
 	"math"
 	"math/rand"
 	"sort"
 	"sync"
 	"time"
 
-	"github.com/reusee/lgtk"
+	"github.com/nsf/termbox-go"
 )
 
 var (
@@ -102,88 +101,76 @@ type UI func(what string, args ...interface{})
 
 type Input func() rune
 
+func runeWidth(r rune) int {
+	switch {
+	case r >= 0x4e00 && r <= 0x9fff, // CJK综合汉字
+		r >= 0x2f00 && r <= 0x2fdf,   // 部首
+		r >= 0x2e80 && r <= 0x2eff,   // 部首辅助
+		r >= 0x2ff0 && r <= 0x2fff,   // 汉字构成记述文字
+		r >= 0x3000 && r <= 0x303f,   // CJK标点
+		r >= 0x3040 && r <= 0x309f,   // 平假名
+		r >= 0x30A0 && r <= 0x30ff,   // 片假名
+		r >= 0x31c0 && r <= 0x31ef,   // 笔画
+		r >= 0x31f0 && r <= 0x31ff,   // 片假名扩展
+		r >= 0x3400 && r <= 0x4dbf,   // 汉字扩展A
+		r >= 0xf900 && r <= 0xfaff,   // CJK 互换汉字
+		r >= 0xff00 && r <= 0xffef,   // 全角
+		r >= 0x20000 && r <= 0x2ffff, // 汉字扩展
+		r >= 0xe0100 && r <= 0xe01ef, // 异体汉字
+		r >= 0x1b000 && r <= 0x1b0ff, // 假名辅助
+		r >= 0x30000 && r <= 0x3ffff:
+		return 2
+	default:
+		return 1
+	}
+}
+
 func runPractice(entries []EntryInfo, data *Data) {
-	keys := make(chan rune)
-	g, err := lgtk.New(`
-Gdk = lgi.Gdk
+	termbox.Init()
+	defer termbox.Close()
+	width, height := termbox.Size()
 
-css = Gtk.CssProvider.get_default()
-css:load_from_data([[
-GtkWindow {
-	background-color: black;
-	color: white;
-}
-#hint {
-	font-size: 16px;
-}
-#text {
-	font-size: 48px;
-	color: #0099CC;
-}
-#info {
-	color: grey;
-}
-]])
-Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css, 999)
-
-win = Gtk.Window{
-	title = 'Spaced Repetition System',
-	Gtk.Grid{
-		orientation = 'VERTICAL',
-		Gtk.Label{
-			expand = true,
-		},
-		Gtk.Label{
-			id = 'hint',
-			name = 'hint',
-		},
-		Gtk.Label{
-			id = 'text',
-			name = 'text',
-		},
-		Gtk.Label{
-			expand = true,
-		},
-		Gtk.Label{
-			id = 'info',
-			name = 'info',
-		},
-	},
-}
-win.child.text:set_line_wrap(true)
-
-function win:on_key_press_event(ev)
-	Key(ev.keyval)
-	return true
-end
-function win.on_destroy()
-	Exit(0)
-end
-win:show_all()
-
-	`,
-		"Key", func(val rune) {
-			select {
-			case keys <- val:
-			default:
-			}
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
+	printStr := func(line int, str string) {
+		for x := 0; x < width; x++ {
+			termbox.SetCell(x, line, ' ', termbox.ColorDefault, termbox.ColorDefault)
+		}
+		l := 0
+		for _, r := range str {
+			l += runeWidth(r)
+		}
+		x := (width - l) / 2
+		for _, r := range str {
+			termbox.SetCell(x, line, r, termbox.ColorDefault, termbox.ColorDefault)
+			x += runeWidth(r)
+		}
+		termbox.Flush()
 	}
 
 	var ui UI = func(what string, args ...interface{}) {
 		switch what {
 		case "set-hint":
-			g.ExecEval(`win.child.hint:set_label(T)`, "T", args[0].(string))
+			printStr(height/2-2, args[0].(string))
 		case "set-text":
-			g.ExecEval(`win.child.text:set_label(T)`, "T", args[0].(string))
+			printStr(height/2, args[0].(string))
+		case "set-info":
+			printStr(height-1, args[0].(string))
 		default:
-			log.Fatalf("unknown ui action %s", what)
+			panic("unknown ui action")
 		}
 	}
 
+	keys := make(chan rune)
+	go func() {
+		for {
+			ev := termbox.PollEvent()
+			if ev.Type == termbox.EventKey {
+				select {
+				case keys <- ev.Ch:
+				default:
+				}
+			}
+		}
+	}()
 	var input Input = func() rune {
 		return <-keys
 	}
@@ -215,8 +202,7 @@ loop:
 		if e.late > 0 {
 			lateStr = s(" late %f", e.late)
 		}
-		g.ExecEval(`win.child.info:set_label(T)`, "T",
-			s("level %d lesson %s%s", lastHistory.Level, e.Lesson(), lateStr))
+		ui("set-info", s("level %d lesson %s%s", lastHistory.Level, e.Lesson(), lateStr))
 		res := e.Practice(ui, input)
 		switch res {
 		case LEVEL_UP:

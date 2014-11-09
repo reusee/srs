@@ -52,23 +52,20 @@ func (e *AudioToWordEntry) Practice(ui UI, input Input) PracticeResult {
 	ui("set-text", e.word.Text)
 repeat:
 	ui("set-hint", "press G to levelup, T to reset level, Space to repeat")
-read_key:
 	key := input()
 	switch key {
 	case 'g':
 		return LEVEL_UP
 	case 't':
 		return LEVEL_RESET
-	case ' ':
-		ui("set-hint", "playing...")
-		playAudio(e.word.AudioFile)
-		ui("set-hint", "")
-		goto repeat
 	case 'q':
 		ui("set-hint", "exit...")
 		return EXIT
 	default:
-		goto read_key
+		ui("set-hint", "playing...")
+		playAudio(e.word.AudioFile)
+		ui("set-hint", "")
+		goto repeat
 	}
 }
 
@@ -108,20 +105,17 @@ repeat:
 	ui("set-hint", "playing...")
 	playAudio(e.word.AudioFile)
 	ui("set-hint", "press G to levelup, T to reset level, Space to repeat")
-read_key:
 	key := input()
 	switch key {
 	case 'g':
 		return LEVEL_UP
 	case 't':
 		return LEVEL_RESET
-	case ' ':
-		goto repeat
 	case 'q':
 		ui("set-hint", "exit...")
 		return EXIT
 	default:
-		goto read_key
+		goto repeat
 	}
 }
 
@@ -142,23 +136,20 @@ func (s sentenceCommon) Practice(ui UI, input Input) PracticeResult {
 	playAudio(string(s))
 repeat:
 	ui("set-hint", "press G to levelup, T to reset level, Space to repeat")
-read_key:
 	key := input()
 	switch key {
 	case 'g':
 		return LEVEL_UP
 	case 't':
 		return LEVEL_RESET
-	case ' ':
-		ui("set-hint", "playing...")
-		playAudio(string(s))
-		ui("set-hint", "")
-		goto repeat
 	case 'q':
 		ui("set-hint", "exit...")
 		return EXIT
 	default:
-		goto read_key
+		ui("set-hint", "playing...")
+		playAudio(string(s))
+		ui("set-hint", "")
+		goto repeat
 	}
 }
 
