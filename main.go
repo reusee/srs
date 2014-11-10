@@ -155,6 +155,8 @@ func main() {
 		data.PrintHistory(args)
 	case "practice":
 		data.Practice(args)
+	case "stat":
+		data.PrintStat(args)
 	case "words":
 		data.ListWords(args)
 	case "edit-word":

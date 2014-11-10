@@ -30,12 +30,10 @@ type EntryInfo struct {
 	late float64
 }
 
-func (data *Data) Practice([]string) {
+func (data *Data) getAllPracticeEntries() []EntryInfo {
 	var entries []EntryInfo
 	now := time.Now()
 	// filter
-	nReview := 0
-	levelStat := make(map[int]int)
 	for _, e := range data.Practices {
 		lastHistory := e.LastHistory()
 		if lastHistory.Time.Add(LevelTime[lastHistory.Level]).Before(now) {
@@ -49,19 +47,36 @@ func (data *Data) Practice([]string) {
 				PracticeEntry: e,
 				late:          late,
 			})
-			if lastHistory.Level > 0 {
-				nReview++
-			}
-			levelStat[lastHistory.Level]++
 		}
 	}
-	p("%d entries to review\n", nReview)
+	return entries
+}
+
+func (data *Data) PrintStat([]string) {
+	entries := data.getAllPracticeEntries()
+	nReviews := 0
+	nLate := 0
+	levelStat := make(map[int]int)
+	for _, e := range entries {
+		lastHistory := e.LastHistory()
+		if lastHistory.Level > 0 {
+			nReviews++
+		}
+		if e.late > 0 {
+			nLate++
+		}
+		levelStat[lastHistory.Level]++
+	}
+	p("%d entries to review, %d late\n", nReviews, nLate)
 	for i := 1; i < 16; i++ {
 		if n := levelStat[i]; n > 0 {
 			p("%d %d\n", i, n)
 		}
 	}
+}
 
+func (data *Data) Practice([]string) {
+	entries := data.getAllPracticeEntries()
 	// sort
 	sort.Sort(EntrySorter(entries))
 
