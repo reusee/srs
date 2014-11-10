@@ -162,6 +162,9 @@ func main() {
 	case "edit-word":
 		data.EditWord(args)
 	case "fix":
+		for _, w := range data.Words {
+			w.Text = strings.Replace(w.Text, ".aac", "", -1)
+		}
 
 	default:
 		if handler, ok := commandHandlers[cmd]; ok {
