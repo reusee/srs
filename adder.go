@@ -12,6 +12,62 @@ func init() {
 	commandHandlers["add-sentences"] = AddSentences
 	commandHandlers["add-dialogs"] = AddDialogs
 	commandHandlers["add-aacs"] = AddAACs
+	commandHandlers["add-words-with-text"] = AddWordsWithText
+}
+
+func AddWordsWithText(data *Data, args []string) {
+	for _, audioFile := range args {
+		if !strings.HasSuffix(audioFile, ".mp3") {
+			continue
+		}
+		audioFile, err := filepath.Abs(audioFile)
+		if err != nil {
+			log.Fatalf("AddWordsWithText: wrong audio file path %v", err)
+		}
+		audioFile = strings.TrimPrefix(audioFile, filepath.Join(rootPath, "files"))
+		text := strings.TrimSpace(strings.SplitN(filepath.Base(audioFile), " ", 2)[1])
+		text = strings.Replace(text, ".mp3", "", -1)
+		if text == "" {
+			log.Fatalf("AddWordsWithText: no text in file path %s", audioFile)
+		}
+		index := data.GetWordIndex(audioFile, text)
+		// audio to word entry
+		entry := &AudioToWordEntry{
+			WordIndex: index,
+			HistoryImpl: &HistoryImpl{
+				History: []HistoryEntry{
+					{
+						Level: 0,
+						Time:  time.Now(),
+					},
+				},
+			},
+		}
+		added := data.AddEntry(entry)
+		if added {
+			p("added AudioToWordEntry %s\n", audioFile)
+		} else {
+			p("skip %s\n", audioFile)
+		}
+		// word to audio entry
+		entry2 := &WordToAudioEntry{
+			WordIndex: index,
+			HistoryImpl: &HistoryImpl{
+				History: []HistoryEntry{
+					{
+						Level: 0,
+						Time:  time.Now(),
+					},
+				},
+			},
+		}
+		added = data.AddEntry(entry2)
+		if added {
+			p("added WordToAudioEntry %s\n", audioFile)
+		} else {
+			p("skip %s\n", audioFile)
+		}
+	}
 }
 
 func AddAACs(data *Data, args []string) {
