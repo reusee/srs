@@ -82,7 +82,7 @@ func (data *Data) Practice([]string) {
 
 	// select
 	maxWeight := 500
-	maxReviewWeight := 200
+	maxReviewWeight := 300
 	maxNewWeight := 50
 	reviewWeight := 0
 	newWeight := 0
