@@ -143,12 +143,9 @@ func runeWidth(r rune) int {
 func runPractice(entries []EntryInfo, data *Data) {
 	termbox.Init()
 	defer termbox.Close()
-	width, height := termbox.Size()
 
+	width, height := termbox.Size()
 	printStr := func(line int, str string) {
-		for x := 0; x < width; x++ {
-			termbox.SetCell(x, line, ' ', termbox.ColorDefault, termbox.ColorDefault)
-		}
 		l := 0
 		for _, r := range str {
 			l += runeWidth(r)
@@ -158,31 +155,45 @@ func runPractice(entries []EntryInfo, data *Data) {
 			termbox.SetCell(x, line, r, termbox.ColorDefault, termbox.ColorDefault)
 			x += runeWidth(r)
 		}
+	}
+
+	var hint, text, info string
+	redraw := func() {
+		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+		printStr(height/2-2, hint)
+		printStr(height/2, text)
+		printStr(height-1, info)
 		termbox.Flush()
 	}
 
 	var ui UI = func(what string, args ...interface{}) {
 		switch what {
 		case "set-hint":
-			printStr(height/2-2, args[0].(string))
+			hint = args[0].(string)
 		case "set-text":
-			printStr(height/2, args[0].(string))
+			text = args[0].(string)
 		case "set-info":
-			printStr(height-1, args[0].(string))
+			info = args[0].(string)
 		default:
 			panic("unknown ui action")
 		}
+		redraw()
 	}
 
 	keys := make(chan rune)
 	go func() {
 		for {
 			ev := termbox.PollEvent()
-			if ev.Type == termbox.EventKey {
+			switch ev.Type {
+			case termbox.EventKey:
 				select {
 				case keys <- ev.Ch:
 				default:
 				}
+			case termbox.EventResize:
+				width = ev.Width
+				height = ev.Height
+				redraw()
 			}
 		}
 	}()
