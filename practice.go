@@ -258,21 +258,26 @@ func (self EntrySorter) Less(i, j int) bool {
 	leftLesson := left.Lesson()
 	rightLesson := right.Lesson()
 	if leftLastHistory.Level == 0 {
-		if rightLastHistory.Level == 0 { // new entry
-			if leftLesson < rightLesson { // learn earlier lesson first
-				return true
-			} else if leftLesson > rightLesson {
-				return false
-			} else { // same lesson
-				leftTypeOrder := left.PracticeOrder()
-				rightTypeOrder := right.PracticeOrder()
-				if leftTypeOrder < rightTypeOrder {
+		if rightLastHistory.Level == 0 { // to be remember
+			if len(left.GetHistory()) == 1 && len(right.GetHistory()) == 1 { // pure new entry
+				if leftLesson < rightLesson { // learn earlier lesson first
 					return true
-				} else if leftTypeOrder > rightTypeOrder {
+				} else if leftLesson > rightLesson {
 					return false
-				} else {
-					return leftLastHistory.Time.Before(rightLastHistory.Time)
+				} else { // same lesson
+					leftTypeOrder := left.PracticeOrder()
+					rightTypeOrder := right.PracticeOrder()
+					if leftTypeOrder < rightTypeOrder {
+						return true
+					} else if leftTypeOrder > rightTypeOrder {
+						return false
+					} else {
+						return leftLastHistory.Time.Before(rightLastHistory.Time)
+					}
 				}
+			} else { // reset entry
+				now := time.Now()
+				return now.Sub(leftLastHistory.Time) < now.Sub(rightLastHistory.Time)
 			}
 		} else {
 			return false
